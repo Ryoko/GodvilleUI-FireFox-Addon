@@ -1,0 +1,6 @@
+content   godvilleui                 chrome/content/
+skin      godvilleui   classic/1.0   chrome/skin/
+locale    godvilleui   en-US         chrome/locale/en-US/
+
+
+overlay   chrome://browser/content/browser.xul   chrome://godvilleui/content/ff-overlay.xul

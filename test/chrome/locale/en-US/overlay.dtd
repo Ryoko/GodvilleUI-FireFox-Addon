@@ -1,0 +1,8 @@
+<!ENTITY godvilleui.label "Your localized menuitem">
+<!ENTITY godvilleuiContext.label "Your Menuitem">
+<!ENTITY godvilleuiContext.accesskey "Y">
+<!ENTITY godvilleuiToolbarButton.label "Your Toolbar Button">
+<!ENTITY godvilleuiToolbarButton.tooltip "This is your toolbar button!">
+<!ENTITY godvilleuiSidebar.label "Your Sidebar">
+<!ENTITY godvilleuiToolbar.name  "example">
+<!ENTITY godvilleuiToolbar.label "This is an example toolbar. You can hide it under View &gt; toolbars &gt; &godvilleuiToolbar.name;">
