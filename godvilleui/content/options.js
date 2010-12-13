@@ -71,11 +71,11 @@ function save_options(form) {
         setText(curr_sect);
     }else{
         $('img#gui_options_progress').show();
-        localStorage["GM_" + god_name + ":useHeroName"] = $('input#use_hero_name').val() == 'on';
-        localStorage["GM_" + god_name + ":useHeil"] = $('input#use_heil').val() == 'on';
-        localStorage["GM_" + god_name + ":useShortPhrases"] = $('input#use_short').val() == 'on';
-        localStorage["GM_" + god_name + ":useWideScreen"] = $('input#use_wide').val() == 'on';
-        localStorage["GM_" + god_name + ":useBackground"] = $('input#use_background').val() == 'on';
+        localStorage["GM_" + god_name + ":useHeroName"] = $('input#use_hero_name').attr('checked');
+        localStorage["GM_" + god_name + ":useHeil"] = $('input#use_heil').attr('checked');
+        localStorage["GM_" + god_name + ":useShortPhrases"] = $('input#use_short').attr('checked');
+        localStorage["GM_" + god_name + ":useWideScreen"] = $('input#use_wide').attr('checked');
+        localStorage["GM_" + god_name + ":useBackground"] = $('input#use_background').attr('checked');
         $('img#gui_options_progress').fadeOut('slow');
     }
     ImproveInProcess = false;

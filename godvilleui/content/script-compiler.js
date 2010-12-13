@@ -79,7 +79,7 @@ contentLoad: function(e) {
 injectScript: function(script, url, unsafeContentWin) {
 	var sandbox, script, logger, storage, xmlhttpRequester;
 	var safeWin=new XPCNativeWrapper(unsafeContentWin);
-
+    
 	sandbox=new Components.utils.Sandbox(safeWin);
 
 	var storage=new godvilleui_ScriptStorage();

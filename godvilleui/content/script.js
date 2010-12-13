@@ -785,7 +785,8 @@ function improveInterface(){
     }
     if (localStorage["GM_" + god_name + ":useBackground"] == 'true') {
         if ($('div#hero_background').length == 0) {
-            var imgURL = GM_getResourceImageAsURL("background_default.jpg");
+//            var imgURL = GM_getResourceImageAsURL("background_default.jpg");
+            imgURL = 'https://github.com/Ryoko/GodvilleUI-Chrome-Extension/raw/devel/script/background_default.jpg';
             var $bkg = $('<div id=hero_background>').css({'background-image' : 'url(' + imgURL + ')', 'background-repeat' : 'repeat',
                 'position' : 'fixed', 'width' : '100%', 'height' : '100%', 'z-index' : '1'});
             $('body').prepend($bkg);
