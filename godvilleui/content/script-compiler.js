@@ -49,17 +49,31 @@ contentLoad: function(e) {
 
 	var unsafeLoc=new XPCNativeWrapper(unsafeWin, "location").location;
 	var href=new XPCNativeWrapper(unsafeLoc, "href").href;
+    var script;
+    if (godvilleui_gmCompiler.isGreasemonkeyable(href)) {
+        if (/http:\/\/godville\.net\/hero.*/.test(href)) {
+            script = godvilleui_gmCompiler.getUrlContents(
+                    'chrome://godvilleui/content/jquerymin.js'
+                    );
 
-	if (
-		godvilleui_gmCompiler.isGreasemonkeyable(href)
-		&& ( /http:\/\/godville\.net\/hero.*/.test(href) )
-		&& true
-	) {
-		var script=godvilleui_gmCompiler.getUrlContents(
-			'chrome://godvilleui/content/godvilleui.js'
-		);
-		godvilleui_gmCompiler.injectScript(script, href, unsafeWin);
-	}
+            script += godvilleui_gmCompiler.getUrlContents(
+                    'chrome://godvilleui/content/phrases.js'
+                    );
+
+            script += godvilleui_gmCompiler.getUrlContents(
+                    'chrome://godvilleui/content/script.js'
+                    );
+            godvilleui_gmCompiler.injectScript(script, href, unsafeWin);
+        }
+
+        if (/http:\/\/godville\.net\/user\/profile.*/.test(href)) {
+            script = godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/jquerymin.js' );
+            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/phrases.js' );
+            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options-page.js' );
+            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options.js' );
+            godvilleui_gmCompiler.injectScript(script, href, unsafeWin);
+        }
+    }
 },
 
 injectScript: function(script, url, unsafeContentWin) {
@@ -91,9 +105,13 @@ injectScript: function(script, url, unsafeContentWin) {
 	//unsupported
 	sandbox.GM_registerMenuCommand=function(){};
 	sandbox.GM_log=function(){};
-	sandbox.GM_getResourceURL=function(){};
-	sandbox.GM_getResourceText=function(){};
-
+	sandbox.GM_getResourceURL=function(resname){return 'chrome://godvilleui/content/' + resname};
+	sandbox.GM_getResourceText=function(res){
+        return godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/' + res);
+    };
+    sandbox.GM_getResourceImageAsURL=function(res){
+        return window.URL.createObjectURL('chrome://godvilleui/content/' + res);
+    }
 	sandbox.__proto__=sandbox.window;
 
 	try {

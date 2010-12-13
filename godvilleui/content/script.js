@@ -1,31 +1,18 @@
-// ==UserScript==
-// @name           godville-ui
-// @namespace      http://godville.net/userscripts
-// @description    Some improvements for godville ui
-// @include        http://godville.net/hero*
-// @require        http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js
-// @resource       Words https://github.com/Ryoko/godville-ui/raw/_test/phrases.json
-// @resource       Style https://github.com/Ryoko/godville-ui/raw/_test/godville-ui.css
-// @resource       Version https://github.com/Ryoko/godville-ui/raw/_test/version
-// @license        GNU General Public License v3
-// ==/UserScript==
-// @require        http://mesak-project.googlecode.com/files/jquery.142.gm.js 
 
 var version = 2;
 var script_link = 'http://userscripts.org/scripts/show/81101';
-var latest_version_link = 'http://github.com/Ryoko/godville-ui/raw/_test/version';
+var latest_version_link = 'http://github.com/Ryoko/godville-ui/raw/master/version';
 var source_link_template = 'http://github.com/Ryoko/godville-ui/raw/%tag%/godville-ui.user.js';
 
-var god_name = $('#menu_top').text().replace(/Приветствуем, о (.+)\!/, '$1' );
-var developers = ['Neniu'];
+var god_name = isArena() ?
+        $.trim($('div#hero1_info fieldset div div a[href*="/gods/"]').text()):
+        $('#menu_top').text().replace(/Приветствуем, о (.+)\!/, '$1' );
+var developers = ['Neniu', 'Ryoko'];
 var char_name = isArena() ?
-        $('div#hero1_info fieldset div:first-child div').text() :
+        $.trim($('div#hero1_info fieldset div:first div').text()):
         $('div#hi_box div a[href^="/gods/"]').text();
-var guild_name = $('div#hi_box div a[href*="wiki"]').text();
-//GM_log("Guild name =" + guild_name);
-
 // Style
-GM_addStyle( GM_getResourceText('Style') );
+GM_addStyle( GM_getResourceText('godville-ui.css') );
 
 // ------------------------
 //      HELPERS
@@ -129,7 +116,8 @@ var menu_bar = {
 		this.bar = $('<div id="ui_menu_bar"></div>').append(this.items);
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
-		this.append($('<strong>Godville UI:</strong>'));
+        ///TODO: auto change version number
+		this.append($('<strong>Godville UI (v.0.2.0):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
@@ -163,7 +151,7 @@ var storage = {
 		return god_name + ':' + key;
 	},
 	set: function(id, value) {
-		GM_setValue(this._get_key(id), "" + value);
+		GM_setValue(this._get_key(id), value);
 		return value;
 	},
 	get: function(id) {
@@ -184,9 +172,9 @@ var storage = {
 	},
 	dump: function() {
 		var lines = new Array;
-		for each (val in GM_listValues().sort()) {
-			lines.push(val + ' = ' + GM_getValue(val, 'UNDEF'));
-		}
+//		for each (val in GM_listValues().sort()) {
+//			lines.push(val + ' = ' + GM_getValue(val, 'UNDEF'));
+//		}
 		GM_log("Storage:\n" + lines.join("\n"));
 	}
 };
@@ -196,7 +184,17 @@ var words = {
 		// JSON.parse не поддерживает комментарии в JSON. Whyyyyy ???
 		// пришлось использовать небезопасный eval.
 		// TODO: JSON.minify? yaml? -- и для того и другого нужна еще одна библиотечка
-		this.base = eval('(' + GM_getResourceText('Words') + ')');
+//        this.waitResponce();
+        this.base = getWords();
+        var sects = ['heal', 'pray', 'sacrifice', 'exp', 'gold', 'hit', 'do_task', 'cancel_task', 'die', 'town', 'heil'];
+        for (var i = 0; i < sects.length; i++){
+            var t = sects[i];
+            var text = localStorage["GM_" + god_name + ":phrases_" + t];
+//            var text_list = god_name (this.response) ? this.response['phrases'][t] : [];
+            if (text && text != ""){
+                this.base['phrases'][t] = text.split("||");
+            }
+         }
 		this.version = this.base['version'];
 
 		// Проверка версии
@@ -210,27 +208,53 @@ var words = {
 				  + " - или, если Вы изменяли phrases.json, и сейчас используете его, вручную найти что изменилось и поправить");
 		}
 	},
-
 	// Phrase gen
-	randomPhrase: function(sect) {
-		return char_name + ', ' + getRandomItem(this.base['phrases'][sect]);
-	},
-	longPhrase: function(sect, len) {
-        var prefix = char_name + ', ' + this._getHeil() + ', ';
-		phrases = this._longPhrase_recursion(this.base['phrases'][sect].slice(), (len || 78) - prefix.length);
-		return prefix + this._changeFirstLetter(phrases.join(' '));
-	},
-	inspectPhrase: function(item_name) {
-		return this.randomPhrase('inspect_prefix') + ' "' + item_name + '"';
+    randomPhrase: function(sect) {
+        return getRandomItem(this.base['phrases'][sect]);
+    },
+
+    longPhrase: function(sect, len) {
+        var prefix = this._addHeroName(this._addHeil(''));
+        var phrases;
+        if (localStorage["GM_" + god_name + ":useShortPhrases"] == "true") {
+            phrases = [getRandomItem(this.base['phrases'][sect])];
+        }else{
+            phrases = this._longPhrase_recursion(this.base['phrases'][sect].slice(), (len || 78) - prefix.length);
+        }
+        return prefix ? prefix + this._changeFirstLetter(phrases.join(' ')) : phrases.join(' ');
+    },
+
+    inspectPhrase: function(item_name) {
+		return this.getPhrasePrefixed(this.randomPhrase('inspect_prefix') + ' "' + item_name + '"!');
 	},
 
 	// Checkers
 	isCategoryItem: function(cat, item_name) {
 		return this.base['items'][cat].indexOf(item_name) >= 0;
 	},
+
 	canBeActivated: function($obj) {
 		return $obj.text().match(/\(\@\)/);
 	},
+
+    _changeFirstLetter: function(text){
+        return text.charAt(0).toLowerCase() + text.slice(1);
+    },
+
+    getPhrasePrefixed: function(text){
+        if (text == "") return "";
+        return this._addHeroName(this._addHeil(text));
+    },
+
+    _addHeroName: function(text){
+        if ((localStorage["GM_" + god_name + ":useHeroName"] != 'true')) return text;
+        return char_name + ', ' + this._changeFirstLetter(text);
+    },
+
+    _addHeil: function(text){
+        if ((localStorage["GM_" + god_name + ":useHeil"] != 'true')) return text;
+        return getRandomItem(this.base['phrases']['heil']) + ', ' + this._changeFirstLetter(text);
+    },
 
 	// Private (или типа того)
 	_longPhrase_recursion: function(source, len) {
@@ -238,19 +262,11 @@ var words = {
 			var next = popRandomItem(source);
 			var remainder = len - next.length - 2; // 2 for ', '
 			if ( remainder > 0) {
-				var res = [next].concat(this._longPhrase_recursion(source, remainder));
-				return res;
+                return [next].concat(this._longPhrase_recursion(source, remainder));
 			}
 		}
 		return [];
-	},
-        _getHeil: function() {
-        	return getRandomItem(this.base['phrases']['heil']);
-    	},
-
-    	_changeFirstLetter: function(text){
-        	return text.charAt(0).toLowerCase() + text.slice(1);
-    	}
+	}
 };
 
 // ------------------------
@@ -277,7 +293,7 @@ var stats = {
 	setFromLabelCounter: function(id, $container, label, parser) {
 		parser = parser || parseInt;
 		var $label = findLabel($container, label);
-		var $field = $label.next('.field_content');
+		var $field = $label.siblings('.field_content');
 		var value = parser($field.text());
 
 		return this.set(id, value);
@@ -332,6 +348,10 @@ var logger = {
 
 	update: function() {
 		this.need_separator = true;
+        if (isArena()){
+            this.watchStatsValue('heal1', 'hero:hp', 'Здоровье героя', heal);
+            this.watchStatsValue('heal2', 'enemy:hp', 'Здоровье соперника', death);
+        }
 		this.watchStatsValue('prana', 'pr', 'Прана (проценты)');
 		this.watchStatsValue('exp', 'exp', 'Опыт (проценты)');
 		this.watchStatsValue('task', 'tsk', 'Задание (проценты)');
@@ -589,12 +609,32 @@ function generateArenaPhrase() {
 	}
 	// TODO: shuffle parts
 	// TODO: smart join: .... , .... и ....
-	var msg = parts.join(', ');
+    parts = shuffleArray(parts);
+	var msg = words.getPhrasePrefixed(smartJoin(parts));
 	if(msg.length < 80) {
 		return msg;
 	} else {
 		return generateArenaPhrase();
 	}
+}
+
+function shuffleArray(phrases){
+    var out = [];
+    while (phrases.length > 0){
+        out.push(popRandomItem(phrases));
+    }
+    return out;
+}
+
+function smartJoin(parts){
+    var out = "";
+    var trim_last = /[\.!]$/;
+    for (var i = 0; i < parts.length; i++){
+        out += (i == 0)? "" : (i != parts.length - 1) ? ", " : " и ";
+        var p = (i != 0) ? words._changeFirstLetter(parts[i]) : parts[i];
+        out += (i != parts.length - 1) ? p.replace(trim_last, "") : p;
+    }
+    return out;
 }
 
 function getArenaSayBox() {
@@ -605,7 +645,7 @@ function getArenaSayBox() {
 	appendCheckbox($div, 'say_heal', 'лечись');
 	appendCheckbox($div, 'say_pray', 'молись');
 
-	$div.click(function() { sayToHero(generateArenaPhrase);});
+	$div.click(function() { sayToHero(generateArenaPhrase());});
 	return $div;
 }
 
@@ -648,7 +688,11 @@ function improveFieldBox() {
 // ---------- Stats --------------
 
 function improveStats() {
-	if (isArena()) return;
+	if (isArena()) {
+        stats.setFromLabelCounter('heal1', $('#hero1_stats'), 'Здоровье');
+        stats.setFromLabelCounter('heal2', $('#hero2_stats'), 'Здоровье');
+        return;
+    }
 	if (isAlreadyImproved( $('#hs_box') )) return;
 
 	// Add links
@@ -718,6 +762,49 @@ function improveMailbox() {
 
 }
 
+function improveInterface(){
+    var $pw = $('div#page_wrapper');
+    var $c = $('div#acc_box div:first');
+    if (localStorage["GM_" + god_name + ":useWideScreen"] == 'true') {
+//        if ($pw.css('width') == '80%') return;
+        $pw.css('width', '80%');
+        var wdt = Math.floor(($c.width() - 48) / 6);
+        wdt = (wdt - Math.floor(wdt / 2) * 2) == 0 ? wdt - 1 : wdt;
+        var wd1 = Math.floor((wdt - 7) / 2);
+        var wd2 = Math.floor((wdt - 21) / 4);
+        $('div.field_content:eq(0) span div[class^="acc_"]', $c).width(wdt);
+        $('div.field_content:eq(1) span div[class^="acc_"]', $c).width(wd1);
+        $('div.field_content:eq(2) span div[class^="acc_"]', $c).width(wd2);
+    }else{
+        if ($pw.css('width') == '80%') {
+            $pw.css('width', '995px');
+            $('div.field_content:eq(0) span div[class^="acc_"]', $c).width(57);
+            $('div.field_content:eq(1) span div[class^="acc_"]', $c).width(25);
+            $('div.field_content:eq(2) span div[class^="acc_"]', $c).width(9);
+        }
+    }
+    if (localStorage["GM_" + god_name + ":useBackground"] == 'true') {
+        if ($('div#hero_background').length == 0) {
+            var imgURL = GM_getResourceImageAsURL("background_default.jpg");
+            var $bkg = $('<div id=hero_background>').css({'background-image' : 'url(' + imgURL + ')', 'background-repeat' : 'repeat',
+                'position' : 'fixed', 'width' : '100%', 'height' : '100%', 'z-index' : '1'});
+            $('body').prepend($bkg);
+            $pw.css({'z-index': 2, 'position': 'relative'});
+            //    $('body').css({'background-image' : 'url(' + imgURL + ')', 'background-repeat' : 'repeat'});
+            $('div[id$="_block"]').css('background', 'none repeat scroll 0% 0% transparent');
+        }
+    }else{
+        if ($('div#hero_background').length > 0) {
+            $('div#hero_background').remove();
+            $('div[id$="_block"]').removeAttr('style');
+            var width = $pw.css('width');
+            $pw.removeAttr('style');
+            $pw.css('width') = width;
+         }
+    }
+
+}
+
 // -------- do all improvements ----------
 var ImproveInProcess = false;
 function improve() {
@@ -729,7 +816,7 @@ function improve() {
 		improveFieldBox();
 		improveEquip();
 		improveMailbox();
-
+        improveInterface();
 		informer.update('pvp', isArena());
 	} catch (x) {
 		GM_log(x);
@@ -738,15 +825,12 @@ function improve() {
 	}
 }
 
-
-
 // Main code
-$(function() {
 	  words.init();
 	  logger.create();
 	  timeout_bar.create();
 	  menu_bar.create();
-	  updater.check();
+//	  updater.check();
 	  informer.init();
 
 	  improve();
@@ -757,7 +841,3 @@ $(function() {
 							   setTimeout(improve, 1);
 					   });
 	  $('body').hover( function() { logger.update(); } );
-      addAfterLabel($('#hi_box'), 'Гильдия',  $('<a>стат</a>').attr('href', 'http://thedragons.ru/clans/' + guild_name));
-
-});
-
