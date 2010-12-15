@@ -2,7 +2,7 @@ var $j = jQuery.noConflict();
 
 var god_name = isArena() ?
         $j.trim($j('div#hero1_info fieldset div div a[href*="/gods/"]').text()):
-        $j('#menu_top').text().replace(/Приветствуем, о (.+)\!/, '$1' );
+        $j.trim($j('div#hi_box div a[href*="/gods/"]').attr('href').replace('/gods/', ''));
 var developers = ['Neniu', 'Ryoko'];
 var char_name = isArena() ?
         $j.trim($j('div#hero1_info fieldset div:first div').text()):
@@ -113,7 +113,7 @@ var menu_bar = {
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
         ///TODO: auto change version number
-		this.append($j('<strong>Godville UI (v.0.2.3):</strong>'));
+		this.append($j('<strong>Godville UI (v.0.2.4):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
@@ -176,6 +176,7 @@ var storage = {
 };
 
 var words = {
+    currentPhrase: "",
 	init: function() {
         this.base = getWords();
         var sects = ['heal', 'pray', 'sacrifice', 'exp', 'gold', 'hit', 'do_task', 'cancel_task', 'die', 'town', 'heil'];
@@ -201,11 +202,13 @@ var words = {
         }else{
             phrases = this._longPhrase_recursion(this.base['phrases'][sect].slice(), (len || 78) - prefix.length);
         }
-        return prefix ? prefix + this._changeFirstLetter(phrases.join(' ')) : phrases.join(' ');
+        this.currentPhrase = prefix ? prefix + this._changeFirstLetter(phrases.join(' ')) : phrases.join(' ');
+        return this.currentPhrase;
     },
 
     inspectPhrase: function(item_name) {
-		return this.getPhrasePrefixed(this.randomPhrase('inspect_prefix') + ' "' + item_name + '"!');
+        this.currentPhrase = this.getPhrasePrefixed(this.randomPhrase('inspect_prefix') + ' "' + item_name + '"!');
+		return this.currentPhrase;
 	},
 
 	// Checkers
@@ -246,6 +249,12 @@ var words = {
 			}
 		}
 		return [];
+	},
+    checkCurrentPhrase: function(){
+        if ($('#god_phrase').val() == "" && this.currentPhrase != ""){
+            $('#aog_hint_label').hide();
+	        $('#god_phrase').val(this.currentPhrase);
+        }
 	}
 };
 
@@ -749,6 +758,7 @@ function improve() {
 		improveMailbox();
         improveInterface();
 		informer.update('pvp', isArena());
+        words.checkCurrentPhrase();
 	} catch (x) {
 		GM_log(x);
 	} finally {
