@@ -3,7 +3,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:id>{8fb71d2a-5c60-4a26-9b76-218f233c1e6c}</em:id>
         <em:name>godvilleui</em:name>
-        <em:version>0.2.3</em:version>
+        <em:version>0.2.4</em:version>
         <em:description>Some improvements for godville ui</em:description>
         <em:creator>Ryoko</em:creator>
         <em:contributor>Greasemonkey Compiler by Anthony Lieuallen;</em:contributor>
