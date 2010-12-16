@@ -112,7 +112,7 @@ var menu_bar = {
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
         ///TODO: auto change version number
-		this.append($j('<strong>Godville UI (v.0.2.5):</strong>'));
+		this.append($j('<strong>Godville UI (v.0.2.6):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
