@@ -113,7 +113,7 @@ var menu_bar = {
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
         ///TODO: auto change version number
-		this.append($j('<strong>Godville UI (v.0.2.4):</strong>'));
+		this.append($j('<strong>Godville UI (v.0.2.5):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
@@ -151,7 +151,9 @@ var storage = {
 		return value;
 	},
 	get: function(id) {
-		return localStorage.getItem(this._get_key(id));
+        var val = localStorage.getItem(this._get_key(id));
+        if (val) val = val.replace(/^[NSB]\]/, '');
+        return val;
 	},
 	diff: function(id, value) {
 		var diff = null;
@@ -169,9 +171,23 @@ var storage = {
 	dump: function() {
 		var lines = new Array;
         for(var i = 0; i < localStorage.length; i++){
-			lines.push(localStorage[i] + " = " + localStorage[localStorage[i]]);
+			lines.push(localStorage.key(i) + " = " + localStorage[localStorage.key(i)]);
 		}
 		GM_log("Storage:\n" + lines.join("\n"));
+	},
+    clearStorage: function(){
+        if (this.get('clean161210') != 'true'){
+            var idx_lst = [];
+            var r = new RegExp('(^GM_:)|(^GM_.{5,40}'+god_name+'[!?\\.]?:)');
+            for(var i = 0; i < localStorage.length; i++){
+                var key = localStorage.key(i);
+                if (key.match(r)) idx_lst.push(key);
+             }
+            for(key in idx_lst){
+                localStorage.removeItem(idx_lst[key]);
+            }
+            this.set('clean161210', true);
+        }
 	}
 };
 
@@ -251,9 +267,9 @@ var words = {
 		return [];
 	},
     checkCurrentPhrase: function(){
-        if ($('#god_phrase').val() == "" && this.currentPhrase != ""){
-            $('#aog_hint_label').hide();
-	        $('#god_phrase').val(this.currentPhrase);
+        if ($j('#god_phrase').val() == "" && this.currentPhrase != ""){
+            $j('#aog_hint_label').hide();
+	        $j('#god_phrase').val(this.currentPhrase);
         }
 	}
 };
@@ -269,9 +285,9 @@ var stats = {
 		return storage.set('stats_' + key, value);
 	},
 	setFromProgressBar: function(id, $elem) {
-		value = 100 - $elem.css('width').replace(/%/, '');
+		var value = 100 - $elem.css('width').replace(/%/, '');
 		// Workaround for bug with decreasing 'exp'
-		old_value = this.get(id);
+		var old_value = this.get(id);
 		if (old_value) {
 			var diff = value - old_value;
 			if (diff < 0 && diff > -1)
@@ -329,7 +345,7 @@ var logger = {
 		if(diff) {
 			// Округление и добавление плюсика
 			diff = Math.round(diff * 1000) / 1000;
-			s = (diff < 0)? diff : '+' + diff;
+			var s = (diff < 0)? diff : '+' + diff;
 
 			this.appendStr(id, klass, name  + s, descr);
 		}
@@ -338,8 +354,8 @@ var logger = {
 	update: function() {
 		this.need_separator = true;
         if (isArena()){
-            this.watchStatsValue('heal1', 'hero:hp', 'Здоровье героя', heal);
-            this.watchStatsValue('heal2', 'enemy:hp', 'Здоровье соперника', death);
+            this.watchStatsValue('heal1', 'hero:hp', 'Здоровье героя', 'heal');
+            this.watchStatsValue('heal2', 'enemy:hp', 'Здоровье соперника', 'death');
         }
 		this.watchStatsValue('prana', 'pr', 'Прана (проценты)');
 		this.watchStatsValue('exp', 'exp', 'Опыт (проценты)');
@@ -375,7 +391,7 @@ var informer = {
 
 		// load and draw labels
 		this.load();
-		for (flag in this.flags) {
+		for (var flag in this.flags) {
 			if (this.flags[flag])
 				this.create_label(flag);
 		}
@@ -409,7 +425,9 @@ var informer = {
 	},
 	// PRIVATE
 	load: function() {
-		this.flags = JSON.parse(storage.get('informer_flags') || '{}');
+        var fl = storage.get('informer_flags');
+        if (!fl || fl == "") fl = '{}';
+		this.flags = JSON.parse(fl);
 	},
 	save: function() {
 		storage.set('informer_flags', JSON.stringify(this.flags));
@@ -434,7 +452,7 @@ var informer = {
 	tick: function() {
 		// пройти по всем флагам и выбрать те, которые надо показывать
 		var to_show = [];
-		for (flag in this.flags) {
+		for (var flag in this.flags) {
 			if (this.flags[flag])
 				to_show.push(flag);
 		}
@@ -540,7 +558,7 @@ function appendCheckbox($div, id, label) {
 function generateArenaPhrase() {
 	var parts = [];
 	var keys = ['hit', 'heal', 'pray'];
-	for (i in keys) {
+	for (var i in keys) {
 		var key = keys[i];
 		if ($j('#say_' + key).is(':checked')) {
 			parts.push(words.randomPhrase(key));
@@ -604,7 +622,7 @@ function improveSayDialog() {
 		addSayPhraseAfterLabel($box, 'Прана', 'ещё', 'pray');
 
 		// Show timeout bar after saying
-		$j('#god_phrase_btn').click(function () {timeout_bar.start(); return true;});
+		$j('#god_phrase_btn').click(function () {timeout_bar.start(); words.currentPhrase=""; return true;});
 	}
 
 	// Save stats
@@ -742,6 +760,7 @@ function improveInterface(){
             $pw.css('width') = width;
          }
     }
+}
 
 }
 
@@ -767,6 +786,8 @@ function improve() {
 }
 
 // Main code
+
+storage.clearStorage();
 	  words.init();
 	  logger.create();
 	  timeout_bar.create();
