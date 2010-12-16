@@ -8,7 +8,6 @@ var char_name = isArena() ?
         $j.trim($j('div#hero1_info fieldset div:first div').text()):
         $j('div#hi_box div a[href^="/gods/"]').text();
 // Style
-GM_addStyle( GM_getResourceText('godville-ui.css') );
 
 // ------------------------
 //      HELPERS
@@ -762,6 +761,10 @@ function improveInterface(){
     }
 }
 
+function add_css(){
+    if ($j('#ui_css').length == 0){
+        GM_addStyle( GM_getResourceText('godville-ui.css'), 'ui_css');
+    }
 }
 
 // -------- do all improvements ----------
@@ -786,20 +789,19 @@ function improve() {
 }
 
 // Main code
-
+add_css();
 storage.clearStorage();
-	  words.init();
-	  logger.create();
-	  timeout_bar.create();
-	  menu_bar.create();
-//	  updater.check();
-	  informer.init();
+words.init();
+logger.create();
+timeout_bar.create();
+menu_bar.create();
+informer.init();
 
-	  improve();
+improve();
 
-	  // event listeners
-	  $j(document).bind("DOMNodeInserted", function () {
-						   if(!ImproveInProcess)
-							   setTimeout(improve, 1);
-					   });
-	  $j('body').hover( function() { logger.update(); } );
+// event listeners
+$j(document).bind("DOMNodeInserted", function () {
+                   if(!ImproveInProcess)
+                       setTimeout(improve, 1);
+               });
+$j('body').hover( function() { logger.update(); } );

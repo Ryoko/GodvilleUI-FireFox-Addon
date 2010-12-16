@@ -41,28 +41,26 @@ contentLoad: function(e) {
 	var unsafeLoc=new XPCNativeWrapper(unsafeWin, "location").location;
 	var href=new XPCNativeWrapper(unsafeLoc, "href").href;
     var script;
-    if (godvilleui_gmCompiler.isGreasemonkeyable(href)) {
-        if (/http:\/\/godville\.net\/hero.*/.test(href)) {
-            script = godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/jquerymin.js' );
-            script += godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/phrases.js' );
-            script += godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/script.js' );
-            godvilleui_gmCompiler.injectScript(script, unsafeWin, doc);
-        }
+    if (/http:\/\/godville\.net\/hero.*/.test(href)) {
+        script = godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/jquerymin.js' );
+        script += godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/phrases.js' );
+        script += godvilleui_gmCompiler.getUrlContents('chrome://godvilleui/content/script.js' );
+        godvilleui_gmCompiler.injectScript(script, unsafeWin, doc);
+    }
 
-        if (/http:\/\/godville\.net\/user\/profile.*/.test(href)) {
-            script = godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/jquerymin.js' );
-            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/phrases.js' );
-            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options-page.js' );
-            script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options.js' );
-            godvilleui_gmCompiler.injectScript(script, unsafeWin, doc);
-        }
+    if (/http:\/\/godville\.net\/user\/profile.*/.test(href)) {
+        script = godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/jquerymin.js' );
+        script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/phrases.js' );
+        script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options-page.js' );
+        script += godvilleui_gmCompiler.getUrlContents( 'chrome://godvilleui/content/options.js' );
+        godvilleui_gmCompiler.injectScript(script, unsafeWin, doc);
     }
 },
 
 injectScript: function(script, unsafeContentWin, doc) {
 	// add our own APIs
     unsafeContentWin.GM_log=function(msg) { try { unsafeContentWin.console.log('GM_log: '+msg); } catch(e) {} };
-	unsafeContentWin.GM_addStyle=function(css) { godvilleui_gmCompiler.addStyle(doc, css) };
+	unsafeContentWin.GM_addStyle=function(css, id) { godvilleui_gmCompiler.addStyle(doc, css, id) };
 	unsafeContentWin.GM_registerMenuCommand=function(){};
 	unsafeContentWin.GM_log=function(){};
 	unsafeContentWin.GM_getResourceURL=function(resname){return 'chrome://godvilleui/content/' + resname};
@@ -80,13 +78,14 @@ injectScript: function(script, unsafeContentWin, doc) {
     head.appendChild(scr1);
 },
 
-addStyle:function(doc, css) {
+addStyle:function(doc, css, id) {
 	var head, style;
 	head = doc.getElementsByTagName('head')[0];
 	if (!head) { return; }
 	style = doc.createElement('style');
 	style.type = 'text/css';
 	style.innerHTML = css;
+    if (id) style.id = id;
 	head.appendChild(style);
 },
 
