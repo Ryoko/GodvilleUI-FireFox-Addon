@@ -3,7 +3,7 @@ var $j = jQuery.noConflict();
 var god_name = decodeURI(isArena() ?
         $j.trim($j('div#hero1_info fieldset div div a[href*="/gods/"]').text()):
         $j.trim($j('div#hi_box div a[href*="/gods/"]').attr('href').replace('/gods/', '')));
-var developers = ['Neniu', 'Ryoko'];
+var developers = ['Neniu', 'Ryoko', 'Опытный Кролик'];
 var char_name = decodeURI(isArena() ?
         $j.trim($j('div#hero1_info fieldset div:first div').text()):
         $j('div#hi_box div a[href^="/gods/"]').text());
@@ -112,7 +112,7 @@ var menu_bar = {
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
         ///TODO: auto change version number
-		this.append($j('<strong>Godville UI (v.0.2.6):</strong>'));
+		this.append($j('<strong>Godville UI (v.0.2.8):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
@@ -284,7 +284,7 @@ var stats = {
 		return storage.set('stats_' + key, value);
 	},
 	setFromProgressBar: function(id, $elem) {
-		var value = 100 - $elem.css('width').replace(/%/, '');
+		var value = $elem.attr('title').replace(/%/, '');
 		// Workaround for bug with decreasing 'exp'
 		var old_value = this.get(id);
 		if (old_value) {
@@ -557,14 +557,12 @@ function appendCheckbox($div, id, label) {
 function generateArenaPhrase() {
 	var parts = [];
 	var keys = ['hit', 'heal', 'pray'];
-	for (var i in keys) {
+	for (var i = 0; i < keys.length; i++) {
 		var key = keys[i];
 		if ($j('#say_' + key).is(':checked')) {
 			parts.push(words.randomPhrase(key));
 		}
 	}
-	// TODO: shuffle parts
-	// TODO: smart join: .... , .... и ....
     parts = shuffleArray(parts);
 	var msg = words.getPhrasePrefixed(smartJoin(parts));
 	if(msg.length < 80) {
@@ -668,8 +666,8 @@ function improveStats() {
 		return parseInt(val.replace(/[^0-9]/g, '')) || 0;
 	};
 
-	stats.setFromProgressBar('exp', $j('#pr3'));
-	stats.setFromProgressBar('task', $j('#pr4'));
+	stats.setFromProgressBar('exp', $j('#bar_pr3'));
+	stats.setFromProgressBar('task', $j('#bar_pr4'));
 	stats.setFromLabelCounter('level', $box, 'Уровень');
 	stats.setFromLabelCounter('inv', $box, 'Инвентарь');
 	var heal  = stats.setFromLabelCounter('heal', $box, 'Здоровье');
