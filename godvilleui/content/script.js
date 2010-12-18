@@ -112,7 +112,7 @@ var menu_bar = {
 		this.bar.toggle(storage.get('ui_menu_visible') == 'true' || false);
 		//append basic elems
         ///TODO: auto change version number
-		this.append($j('<strong>Godville UI (v.0.2.8):</strong>'));
+		this.append($j('<strong>Godville UI (v.0.2.9):</strong>'));
 		this.append(this.reformalLink);
 		if (is_developer()) {
 			this.append(this.getDumpButton());
@@ -169,12 +169,15 @@ var storage = {
 	},
 	dump: function() {
 		var lines = new Array;
+        var r = new RegExp('^GM_'+god_name+':|GM_options');
         for(var i = 0; i < localStorage.length; i++){
+            if (!localStorage.key(i).match(r)) continue;
 			lines.push(localStorage.key(i) + " = " + localStorage[localStorage.key(i)]);
 		}
 		GM_log("Storage:\n" + lines.join("\n"));
 	},
     clearStorage: function(){
+        this.set('isStorage', 1);
         if (this.get('clean161210') != 'true'){
             var idx_lst = [];
             var r = new RegExp('(^GM_:)|(^GM_.{5,40}'+god_name+'[!?\\.]?:)');
@@ -187,7 +190,7 @@ var storage = {
             }
             this.set('clean161210', true);
         }
-	}
+    }
 };
 
 var words = {
@@ -270,7 +273,7 @@ var words = {
             $j('#aog_hint_label').hide();
 	        $j('#god_phrase').val(this.currentPhrase);
         }
-	}
+    }
 };
 
 // ------------------------
@@ -703,7 +706,6 @@ function improveEquip() {
 function improveMailbox() {
 	if (isArena()) return;
 	if (isAlreadyImproved( $j('#recent_friends') )) return;
-
 	// Ссылки на информацию о боге по средней кнопке мыши
 	$j('#recent_friends .new_line a')
 		.each(function(ind, obj) {
@@ -714,6 +716,44 @@ function improveMailbox() {
 				  obj.href = "http://godville.net/gods/"+obj.innerHTML;
 			  });
 
+}
+
+function improvePanteons(){
+	if (isArena()) return;
+    var $low_to_arena = $j('#aog_box #to_arena_link');
+    var $hi_to_arena = $j('#pantheon_box #hi_to_arena_link');
+    var $box = $j('#hero_pantheon');
+    if (storage.get('useRelocateArena') == 'true'){
+        if ($hi_to_arena.length == 0 && $low_to_arena.length > 0){
+            $hi_to_arena = $j('<span id="hi_to_arena_link"></span>');
+            addAfterLabel($box, ' Гладиаторства', $hi_to_arena);
+            $hi_to_arena = $j('#hi_to_arena_link');
+        }
+        if($low_to_arena.length > 0){
+            $hi_to_arena.html($low_to_arena.html());
+            if ($j('a', $hi_to_arena).length > 0) $j('a', $hi_to_arena).text('Арена');
+            else $hi_to_arena.text('Арена');
+            $hi_to_arena.show();
+            $low_to_arena.hide();
+        }
+    }else{
+        if ($low_to_arena.length == 0 && $hi_to_arena.length > 0){
+            $j('<div><span id="to_arena_link"></span></div>').insertAfter($j('#punish_link'));
+            $low_to_arena = $j('#to_arena_link');
+            $low_to_arena.html($hi_to_arena.html());
+            if ($j('a', $low_to_arena).length > 0) $j('a', $low_to_arena).text('Отправить на арену');
+            else $low_to_arena.text('Отправить на арену');
+        }
+        $hi_to_arena.hide();
+        $low_to_arena.show();
+    }
+
+    if (isAlreadyImproved( $j('#hero_pantheon') )) return;
+    var guild = $j('#hi_box div div i a[href^="http://wiki.godville.net/index.php/"]').text();
+    if (guild){
+        var $gstat = $j('<span id="guild_stat"><a href="http://thedragons.ru/clans/' + encodeURI(guild) + '" onclick="window.open(this.href);return false;" title="Статистика по гильдии">стат.</a></span>');
+        addAfterLabel($box, ' Солидарности', $gstat);
+    }
 }
 
 function improveInterface(){
@@ -739,8 +779,7 @@ function improveInterface(){
     }
     if (storage.get('useBackground') == 'true') {
         if ($j('div#hero_background').length == 0) {
-//            var imgURL = GM_getResourceImageAsURL("background_default.jpg");
-            imgURL = 'http://img194.imageshack.us/img194/9410/backgrounddefault.jpg';
+            var imgURL = GM_getResource("background_default.jpg");
             var $bkg = $j('<div id=hero_background>').css({'background-image' : 'url(' + imgURL + ')', 'background-repeat' : 'repeat',
                 'position' : 'fixed', 'width' : '100%', 'height' : '100%', 'z-index' : '1'});
             $j('body').prepend($bkg);
@@ -761,7 +800,7 @@ function improveInterface(){
 
 function add_css(){
     if ($j('#ui_css').length == 0){
-        GM_addStyle( GM_getResourceText('godville-ui.css'), 'ui_css');
+        GM_addGlobalStyleURL('godville-ui.css', 'ui_css');
     }
 }
 
@@ -770,14 +809,16 @@ var ImproveInProcess = false;
 function improve() {
 	ImproveInProcess = true;
 	try {
+        informer.update('pvp', isArena());
+        if (!storage.get('isStorage')) throw('No users data!');
+        improveInterface();
 		improveLoot();
 		improveSayDialog();
 		improveStats();
 		improveFieldBox();
 		improveEquip();
 		improveMailbox();
-        improveInterface();
-		informer.update('pvp', isArena());
+        improvePanteons();
         words.checkCurrentPhrase();
 	} catch (x) {
 		GM_log(x);

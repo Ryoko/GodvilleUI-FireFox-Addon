@@ -77,6 +77,7 @@ function save_options(form) {
         localStorage["GM_" + god_name + ":useShortPhrases"] = $j('input#use_short').attr('checked');
         localStorage["GM_" + god_name + ":useWideScreen"] = $j('input#use_wide').attr('checked');
         localStorage["GM_" + god_name + ":useBackground"] = $j('input#use_background').attr('checked');
+        localStorage["GM_" + god_name + ":useRelocateArena"] = $j('input#use_replace_arena').attr('checked');
         $j('img#gui_options_progress').fadeOut('slow');
     }
     ImproveInProcess = false;
@@ -121,6 +122,9 @@ function restore_options() {
     }
     if (localStorage["GM_" + god_name + ":useBackground"] == 'true'){
        $j('input#use_background').attr('checked', 'checked');
+    }
+    if (localStorage["GM_" + god_name + ":useRelocateArena"] == 'true'){
+       $j('input#use_replace_arena').attr('checked', 'checked');
     }
 }
 

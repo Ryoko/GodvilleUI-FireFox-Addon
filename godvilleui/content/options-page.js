@@ -40,6 +40,11 @@ return '\
                                     <input id="use_background" name="use_background" type="checkbox">\
                                 </div>\
                             </div>\
+                            <div class="new_line"><span class="l_capt">Переместить "Отправить на арену"</span>\
+                                <div class="field_content">\
+                                    <input id="use_replace_arena" name="use_replace_arena" type="checkbox">\
+                                </div>\
+                            </div>\
                             <div class="new_line">\
                                 <div id="options_GodvilleUI_general"><input class="input_btn" type="submit"\
                                                                             id="GodvilleUI_general"\
