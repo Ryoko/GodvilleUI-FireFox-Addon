@@ -1,15 +1,23 @@
 var $j = jQuery.noConflict();
-var sects = ['heal', 'pray', 'sacrifice', 'exp', 'gold', 'hit', 'do_task', 'cancel_task', 'die', 'town', 'heil'];
-var phrases = {heal : "Лечись", pray: "Молись", sacrifice : "Жертвуй", exp : "Опыт", gold : "Клад, золото", hit : "Бей",
-                do_task : "Задание", cancel_task : "Отмени задание", die : "Умри", town : "Домой", heil : "Восклицания"};
-var def;
-var curr_sect;
-var ImproveInProcess = false;
-var god_name = $j('div#opt_change_profile div:first div:first').text();
-if (god_name != "") localStorage["GM_options:user"] = god_name;
-else god_name = localStorage["GM_options:user"];
-        
+
+var storage = {
+	_get_key: function(key) {
+		return "GM_" + god_name + ':' + key;
+	},
+	set: function(id, value) {
+		localStorage.setItem(this._get_key(id), value);
+		return value;
+	},
+	get: function(id) {
+        var val = localStorage.getItem(this._get_key(id));
+        if (val) val = val.replace(/^[NSB]\]/, '');
+        return val;
+	}
+};
+
+
 function updateMenu(){
+//    if (!isDataReaded) restore_options();
     if (god_name == "") return;
     ImproveInProcess = true;
     if ($j('a#ui_options').length == 0){
@@ -23,6 +31,10 @@ function updateMenu(){
 }
 
 function loadOptions(){
+    if (!localStorage.getItem('GM_options:user')) {
+        setTimeout(loadOptions, 30);
+        return;
+    }
     ImproveInProcess = true;
     $j('div#profile_main').html(getOptionsPage());
     setForm();
@@ -53,7 +65,7 @@ function reset_options(form) {
     var $elem = $j('textarea#ta_edit');
     var text = def['phrases'][curr_sect];
     $elem.attr('rows', text.length);
-    $elem.text(text.join("\n"));
+    $elem.val(text.join("\n"));
     ImproveInProcess = false;
 }
 
@@ -67,17 +79,17 @@ function save_options(form) {
         for (var i = 0; i < t_list.length; i++){
             if (t_list[i] != '') t_out.push(t_list[i]);
         }
-        localStorage["GM_" + god_name + ":phrases_" + curr_sect] = t_out.join("||");
+        storage.set("phrases_" + curr_sect, t_out.join("||"));
         $j('img#gui_word_progress').fadeOut("slow");
         setText(curr_sect);
     }else{
         $j('img#gui_options_progress').show();
-        localStorage["GM_" + god_name + ":useHeroName"] = $j('input#use_hero_name').attr('checked');
-        localStorage["GM_" + god_name + ":useHeil"] = $j('input#use_heil').attr('checked');
-        localStorage["GM_" + god_name + ":useShortPhrases"] = $j('input#use_short').attr('checked');
-        localStorage["GM_" + god_name + ":useWideScreen"] = $j('input#use_wide').attr('checked');
-        localStorage["GM_" + god_name + ":useBackground"] = $j('input#use_background').attr('checked');
-        localStorage["GM_" + god_name + ":useRelocateArena"] = $j('input#use_replace_arena').attr('checked');
+        storage.set("useHeroName", $j('input#use_hero_name').attr('checked'));
+        storage.set("useHeil", $j('input#use_heil').attr('checked'));
+        storage.set("useShortPhrases", $j('input#use_short').attr('checked'));
+        storage.set("useWideScreen", $j('input#use_wide').attr('checked'));
+        storage.set("useBackground", $j('input#use_background').attr('checked'));
+        storage.set("useRelocateArena", $j('input#use_replace_arena').attr('checked'));
         $j('img#gui_options_progress').fadeOut('slow');
     }
     ImproveInProcess = false;
@@ -92,10 +104,10 @@ function setText(element_name){
     $e = $j('form#words fieldset a#l_'+element_name);
     $e.css({'text-decoration' : 'none', 'color' : '#DA251D'});
     var $elem = $j('textarea#ta_edit');
-    var text_list = localStorage["GM_" + god_name + ":phrases_" + element_name];
+    var text_list = storage.get("phrases_" + element_name);
     var text = (text_list && text_list != "") ? text_list.split("||") : def['phrases'][element_name];
     $elem.attr('rows', text.length);
-    $elem.text(text.join("\n"));
+    $elem.val(text.join("\n"));
 //    $j('label#ta_name').text(element_name);
     ImproveInProcess = false;
 }
@@ -107,29 +119,46 @@ function getText(element_name){
 
 // Restores select box state to saved value from localStorage.
 function restore_options() {
+//    if (isDataReaded) return;
     def = getWords();
-    if (localStorage["GM_" + god_name + ":useHeroName"] == 'true'){
+    if (storage.get("useHeroName") == 'true'){
         $j('input#use_hero_name').attr('checked', 'checked');
     }
-    if (localStorage["GM_" + god_name + ":useHeil"] == 'true'){
+    if (storage.get("useHeil") == 'true'){
        $j('input#use_heil').attr('checked', 'checked');
     }
-    if (localStorage["GM_" + god_name + ":useShortPhrases"] == 'true'){
+    if (storage.get("useShortPhrases") == 'true'){
        $j('input#use_short').attr('checked', 'checked');
     }
-    if (localStorage["GM_" + god_name + ":useWideScreen"] == 'true'){
+    if (storage.get("useWideScreen") == 'true'){
        $j('input#use_wide').attr('checked', 'checked');
     }
-    if (localStorage["GM_" + god_name + ":useBackground"] == 'true'){
+    if (storage.get("useBackground") == 'true'){
        $j('input#use_background').attr('checked', 'checked');
     }
-    if (localStorage["GM_" + god_name + ":useRelocateArena"] == 'true'){
+    if (storage.get("useRelocateArena") == 'true'){
        $j('input#use_replace_arena').attr('checked', 'checked');
     }
+    isDataReaded = true;
 }
 
+
+
+
+var sects = ['heal', 'pray', 'sacrifice', 'exp', 'gold', 'hit', 'do_task', 'cancel_task', 'die', 'town', 'heil'];
+var phrases = {heal : "Лечись", pray: "Молись", sacrifice : "Жертвуй", exp : "Опыт", gold : "Клад, золото", hit : "Бей",
+                    do_task : "Задание", cancel_task : "Отмени задание", die : "Умри", town : "Домой", heil : "Восклицания"};
+var def = "";
+var curr_sect = "";
+var ImproveInProcess = false;
+var god_name = $j('div#opt_change_profile div:first div:first').text();
+    if (god_name != "") localStorage.setItem("GM_options:user", god_name);
+    else god_name = localStorage.getItem("GM_options:user");
+var isDataReaded = false;
 updateMenu();
+
+
 $j(document).bind("DOMNodeInserted", function () {
                      if(!ImproveInProcess)
-                         setTimeout(updateMenu, 1);
+                         setTimeout(updateMenu, 10);
                  });
